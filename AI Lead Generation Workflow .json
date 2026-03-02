@@ -1,0 +1,1604 @@
+{
+  "name": "AI Lead Generation Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        -128
+      ],
+      "id": "413b18da-033c-48cf-a7dc-a5fb80ce6328",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "value": "=https://console.apify.com/actors/nwua9Gu5YrADL7ZDj/input",
+          "mode": "url"
+        },
+        "customBody": "{\n  \"language\": \"en\",\n  \"locationQuery\": \"New York, USA\",\n  \"maxCrawledPlacesPerSearch\": 4,\n  \"searchStringsArray\": [\n    \"Enterprise Software Company\"\n  ],\n  \"scrapeContacts\": false,\n  \"scrapePlaceDetailPage\": false,\n  \"scrapeReviewsPersonalData\": false,\n  \"scrapeSocialMediaProfiles\": {\n    \"facebooks\": false,\n    \"instagrams\": false,\n    \"tiktoks\": false,\n    \"twitters\": false,\n    \"youtubes\": false\n  },\n  \"includeWebResults\": false,\n  \"maximumLeadsEnrichmentRecords\": 0,\n  \"skipClosedPlaces\": true\n}"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -128
+      ],
+      "id": "9e9180f8-6ffa-4ca8-b16b-f40e9c223eac",
+      "name": "Run an Actor",
+      "credentials": {
+        "apifyApi": {
+          "id": "vOYuygjWAk5peEgA",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "fNz47U6sogWu5rJex",
+        "limit": 4,
+        "options": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        224,
+        416
+      ],
+      "id": "1b693934-dbe2-45ec-8559-7566a9ef6e5d",
+      "name": "Get dataset items",
+      "credentials": {
+        "apifyApi": {
+          "id": "vOYuygjWAk5peEgA",
+          "name": "Apify account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        416
+      ],
+      "id": "c69253d2-c4c2-45ca-a785-8d20cfe64f5b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "status",
+              "lookupValue": "ready_for_scrape"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        672,
+        416
+      ],
+      "id": "eb156d79-03df-41ad-96db-da89c6ed8cfb",
+      "name": "Get row(s) in sheet",
+      "executeOnce": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        896,
+        416
+      ],
+      "id": "2c1fa3c8-60c4-4cd3-ab52-0212e6a1736b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const row = $json;\nlet domain = null;\n\n// 1. First priority: Check if cleanedDomain has data\nif (row.cleanedDomain && row.cleanedDomain.trim() !== \"\") {\n    domain = row.cleanedDomain.trim().toLowerCase();\n} \n\n// 2. Second priority: If domain is still missing, extract from website\nelse if (row.website && row.website.trim() !== \"\") {\n    // Verified Split Logic for n8n\n    let clean = row.website.replace('http://', '').replace('https://', '');\n    clean = clean.replace('www.', '');\n    domain = clean.split('/')[0].toLowerCase();\n}\n\nreturn {\n    ...row,\n    extractedDomain: domain,\n    domainError: domain ? null : \"No domain or website found\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        344
+      ],
+      "id": "25d0d570-90db-4867-bd72-2ffb669f6538",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "865daf69-9490-4546-879f-8946123e7f49",
+              "leftValue": "={{$json.extractedDomain}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        344
+      ],
+      "id": "e58ddb86-dc11-423e-97b8-c3c3df67455c",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{$json.row_number}} \n",
+            "cleanedDomain": "={{$json.extractedDomain}}",
+            "status": "ready_for_scrape"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        296
+      ],
+      "id": "0fec69e7-2486-461c-941b-3de8bc300f6a",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{$json.row_number}}",
+            "status": "error",
+            "error_reason": "={{$json.domainError}}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1568,
+        512
+      ],
+      "id": "238f0d55-6a08-4729-a841-88f01bf7116f",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{$json.cleanedDomain.startsWith('http') ? $json.cleanedDomain : 'https://' + $json.cleanedDomain}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 10000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        296
+      ],
+      "id": "e6aeaeb5-a501-451b-9d2c-17df2d390263",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  let html = item.json.data; // This is the raw HTML from HTTP Request\n\n  if (!html) {\n    item.json.cleanedText = \"\";\n    continue;\n  }\n\n  // 1️⃣ Remove script and style blocks\n  html = html.replace(/<script[\\s\\S]*?<\\/script>/gi, '');\n  html = html.replace(/<style[\\s\\S]*?<\\/style>/gi, '');\n\n  // 2️⃣ Remove JSON blobs inside <script type=\"application/json\"> (like Wix viewer model)\n  html = html.replace(/<script[^>]*type=[\"']application\\/json[\"'][\\s\\S]*?<\\/script>/gi, '');\n\n  // 3️⃣ Remove comments\n  html = html.replace(/<!--[\\s\\S]*?-->/g, '');\n\n  // 4️⃣ Remove all remaining HTML tags\n  let text = html.replace(/<[^>]+>/g, ' ');\n\n  // 5️⃣ Decode common HTML entities\n  text = text.replace(/&nbsp;/g, ' ');\n  text = text.replace(/&amp;/g, '&');\n  text = text.replace(/&quot;/g, '\"');\n  text = text.replace(/&lt;/g, '<');\n  text = text.replace(/&gt;/g, '>');\n\n  // 6️⃣ Collapse whitespace and trim\n  text = text.replace(/\\s+/g, ' ').trim();\n\n  // 7️⃣ Limit length to ~5000 chars for AI efficiency\n  item.json.cleanedText = text.slice(0, 5000);\n}\n\n// This uses the correct n8n syntax to return your cleaned data\nreturn $input.all().map(item => {\n  return {\n    json: {\n      cleanedText: item.json.cleanedText,\n      status: \"ready_for_ai_analysis\",\n      length: item.json.cleanedText.length\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        296
+      ],
+      "id": "76c14c2a-ff2f-497a-8f75-6f1d576aab87",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2240,
+        296
+      ],
+      "id": "21d2f6c8-6e73-4752-ae2e-811d3843ea20",
+      "name": "Wait",
+      "webhookId": "4c20bc26-6b4f-44d7-9ec1-e4f961155616"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=### SOURCE CONTENT:\n{{ $json.cleanedText.substring(0, 4000) }}\n\n### TASK:\nBased ONLY on the SOURCE CONTENT above, provide a 3-sentence summary:\nSentence 1: The core business offering and industry.\nSentence 2: Their explicit target audience.\nSentence 3: Their stated unique value or key feature.\n\nIf any sentence cannot be completed using only the source content, skip it.",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are a Senior Business Analyst. Your task is to extract a high-density summary strictly and exclusively from the provided website text.  CRITICAL RULE: Do not use outside knowledge, do not assume services, and do not hallucinate details. If a specific 'Who' or 'Value Proposition' is not explicitly stated in the text, omit that sentence rather than inventing it. Focus on the 'What', 'Who', and 'Unique Value Proposition'. Avoid introductory phrases like 'This website is about...' or 'They provide...'. Start directly with the facts."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2464,
+        296
+      ],
+      "id": "134021da-b532-455d-8f3b-da8bd45e8d78",
+      "name": "Basic LLM Chain",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2560,
+        480
+      ],
+      "id": "c531cf04-c4bf-4212-bc79-6c6a9e37be7e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dbanlVkqg8zlXY8p",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Update row in sheet').item.json.row_number }}",
+            "summary": "={{ $json.text }}",
+            "status": "summary_generated"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3040,
+        200
+      ],
+      "id": "698b55bf-2e5a-490e-9766-83d202866b8c",
+      "name": "Update row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f6a96be6-7fd6-45e6-8777-2a0f09436d74",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2816,
+        296
+      ],
+      "id": "57156fa0-9505-4797-98f8-efb303f0cd1c",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Update row in sheet').item.json.row_number }}",
+            "summary": "summary_failed",
+            "error_reason": "Summary not generated"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3040,
+        392
+      ],
+      "id": "7d9516f3-b701-40bf-ad7e-58735c7c8ab9",
+      "name": "Update row in sheet3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Lead Information:\n\nCompany Name: {{ $('Code in JavaScript').item.json.lead_name }}\nBusiness Summary:\n{{$json.summary}}\n\nBacancy Information:\nServices:\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[0] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[1] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[2] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[3] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[4] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[5] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.services[6] }}\n\n\nIndustries Served:\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[0] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[1] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[2] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[3] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[4] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.industries[5] }}\n\nDifferentiators:\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[0] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[1] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[2] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[3] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[4] }}\n{{ $node[\"Code in JavaScript2\"].json.bacancy_info.differentiators[5] }}\nTask:\nGenerate a 3-step outbound email sequence strictly following the system instructions.\n\nImportant:\n- Only use Bacancy services that logically match the lead’s industry or summary.\n- Do not mention services unrelated to the lead.\n- Maintain logical progression across the 3 emails.\n- Return valid JSON only.",
+        "options": {
+          "systemMessage": "You are a senior B2B outbound email strategist for Bacancy Technology.\n\nYour job is to generate a high-quality 3-step outbound email sequence using ONLY the provided:\n\n1. Lead data\n2. Business summary\n3. Bacancy structured company information\n\nSTRICT RULES:\n\n1. Do NOT invent information.\n2. Do NOT fabricate case studies, metrics, or testimonials.\n3. Only use services, industries, and differentiators explicitly provided.\n4. Do not assume technical stack unless mentioned in summary.\n5. Maintain professional grammar and formatting.\n6. Emails must feel human-written, not AI-generated.\n7. Avoid generic sales clichés.\n\n----------------------------------------\nSEQUENCE STRUCTURE (MANDATORY)\n----------------------------------------\n\nEmail 1: Awareness Stage – Introduction & Value Proposition\n- Short personalized opener referencing the summary\n- Identify a likely business goal or opportunity\n- Introduce Bacancy service that logically matches\n- 1 clear CTA (low friction: short call, audit, intro chat)\n- 1 subtle emoji max\n\nEmail 2: Consideration Stage – Pain Points & Trust\n- Reference previous email naturally\n- Highlight 2–3 realistic pain points relevant to the lead’s industry\n- Connect them directly to Bacancy’s relevant capabilities\n- Mention 1 differentiator if relevant\n- Strong but still low-pressure CTA\n- 1 subtle emoji max\n\nEmail 3: Decision Stage – Peace of Mind Close\n- Address operational burden or inefficiency\n- Emphasize partnership mindset\n- Reassure credibility using ONLY provided differentiators\n- Offer something tangible (demo, walkthrough, consultation)\n- Clear CTA\n- No hard selling\n\n----------------------------------------\nPERSONALIZATION QUALITY REQUIREMENTS\n----------------------------------------\n\nEach email must:\n- Be 120–180 words\n- Use clean spacing and paragraph breaks\n- Include a subject line at the top\n- Include greeting: Hi [First Name],\n- Reference [Company Name] naturally\n- Reflect their industry context from summary\n- Have exactly ONE primary CTA\n- Use natural, conversational tone\n- Use proper grammar and punctuation\n- Avoid buzzword stuffing\n\n----------------------------------------\nOUTPUT FORMAT (STRICT JSON)\n----------------------------------------\n\nReturn ONLY valid JSON in this structure:\n\n{\n  \"email_1\": \"...\",\n  \"email_2\": \"...\",\n  \"email_3\": \"...\"\n}\n\nDo not add commentary outside JSON."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3488,
+        200
+      ],
+      "id": "8531529a-1764-45c4-99d4-6d5838392725",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-4-turbo"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 1500
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3560,
+        424
+      ],
+      "id": "dc587a38-5e25-4613-b78c-592ee5a0c78c",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Fe77j23xaMxTBhbV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $json;\n\nitem.bacancy_info = {\n  services: [\n    \"Industry 4.0 Software Development\",\n    \"AI, ML & Generative AI Solutions\",\n    \"Custom Software & SaaS Development\",\n    \"IoT & Edge Computing\",\n    \"Cloud Integration (AWS, Azure, GCP)\",\n    \"Digital Twin & Smart Factory Solutions\",\n    \"Cybersecurity & Industrial Automation\"\n  ],\n  industries: [\n    \"Manufacturing\",\n    \"Healthcare\",\n    \"Fintech & Banking\",\n    \"Oil & Gas\",\n    \"Real Estate & Construction\",\n    \"Logistics\"\n  ],\n  differentiators: [\n    \"14+ years of industry experience\",\n    \"Global workforce of 1050+ IT professionals\",\n    \"2500+ successful digital transformations\",\n    \"Interview before hiring recruitment model\",\n    \"Agile development with Slack, Jira, and GitHub integration\",\n    \"ISO 27001:2013 Certified Company\"\n  ]\n};\n\nreturn [{ json: item }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3264,
+        200
+      ],
+      "id": "4c9d971b-a2a8-4a6a-9cfb-95b30c7ec857",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($json.output);\n\nreturn [\n  {\n    json: {\n      email_1: parsed.email_1,\n      email_2: parsed.email_2,\n      email_3: parsed.email_3\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        200
+      ],
+      "id": "6c2775ef-c196-4f60-b808-0db1117fb519",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Code in JavaScript2').item.json.row_number }}",
+            "email_1": "={{ $json.email_1 }}",
+            "email_2": "={{ $json.email_2 }}",
+            "email_3": "={{ $json.email_3 }}",
+            "status": "email_generated"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4064,
+        200
+      ],
+      "id": "2337574a-76df-4a73-b684-ee811bf976d3",
+      "name": "Update row in sheet4",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0",
+          "mode": "list",
+          "cachedResultName": "AI Lead Genertion Workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KjBl3UTcNmsasjBqFkCFD7B8Limx-eqEDCgTIr5HFo0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_name": "={{$json.title}}",
+            "website": "={{$json.website}}",
+            "phone": "={{$json.phone}}",
+            "address": "={{$json.address}}",
+            "status": "new"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "lead_name",
+              "displayName": "lead_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "address",
+              "displayName": "address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cleanedDomain",
+              "displayName": "cleanedDomain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_1",
+              "displayName": "email_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_2",
+              "displayName": "email_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_3",
+              "displayName": "email_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "error_reason",
+              "displayName": "error_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        416
+      ],
+      "id": "57522ba7-dcd0-408b-8d74-9bea907d25ee",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "gSZn4ll0tFSrEyiq",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Run an Actor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run an Actor": {
+      "main": [
+        []
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get dataset items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get dataset items": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update row in sheet3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2fe8a8ad-dba3-46bb-b1a7-33ee625c706e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "102f7b690b61c75a823c2ff731a15961d54d2d54b1488aa0e67bea92ba1ef634"
+  },
+  "id": "1z6MZ5DsLmPdhFiF",
+  "tags": []
+}
